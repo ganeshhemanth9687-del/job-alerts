@@ -4,7 +4,7 @@ import base64
 from datetime import datetime
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from google import genai  # Modern 2026 SDK import
+from google import genai
 
 # 1. Load System Configuration from GitHub Secrets
 CLIENT_ID = os.environ['GMAIL_CLIENT_ID']
@@ -30,11 +30,7 @@ ai_client = genai.Client(api_key=GEMINI_KEY)
 
 
 def get_unread_emails():
-    """
-    Fetches unread emails from the inbox.
-    TEMPORARY: Left open as 'is:unread' to catch your personal email testing.
-    PROD HINT: Change to 'is:unread from:naukri.com' once live alerts start coming.
-    """
+    """Fetches unread emails from the inbox."""
     query = 'is:unread'
     results = gmail_service.users().messages().list(userId='me', q=query).execute()
     return results.get('messages', [])
@@ -59,25 +55,33 @@ def get_email_body(msg_id):
 
 
 def parse_with_gemini(email_content):
-    """Sends unstructured job content to Gemini and explicitly maps it into a programmatic JSON structure."""
+    """Sends unstructured job content to Gemini and extracts programmatic JSON structure."""
     prompt = (
         "Analyze this job alert email snippet. Extract the following information: "
         "Job Title, Company, Location, Experience Required, and Application Link. "
         "Format the output strictly as a valid JSON list of lists where each inner list represents a job row: "
         '[["Job Title", "Company", "Location", "Experience", "Link"]]. If multiple jobs are listed in one email, '
-        "include all rows. Do not use markdown code blocks (like ```json), just return raw plain text JSON string structures."
+        "include all rows. Do not use markdown code blocks, just return raw plain text JSON string structures."
     )
     
-    # Modern SDK implementation execution call using standard mainline model
     response = ai_client.models.generate_content(
         model='gemini-2.5-flash',
         contents=[prompt, email_content]
     )
     
     try:
-        # Prevent markdown text block wrappers from corrupting programmatic JSON string imports
-        cleaned_text = response.text.replace("
-```json", "").replace("```", "").strip()
+        # Safe string cleaning using safe targets to avoid copy-paste line breaks
+        cleaned_text = response.text.strip()
+        if cleaned_text.startswith("```json"):
+            cleaned_text = cleaned_text[7:]
+        elif cleaned_text.startswith("
+```"):
+            cleaned_text = cleaned_text[3:]
+            
+        if cleaned_text.endswith("```"):
+            cleaned_text = cleaned_text[:-3]
+            
+        cleaned_text = cleaned_text.strip()
         return json.loads(cleaned_text)
     except Exception as e:
         print(f"Failed parsing structured JSON from Gemini pipeline: {e}")
@@ -90,7 +94,6 @@ def log_to_sheet(rows):
     final_rows = []
     
     for row in rows:
-        # Prepend the current tracking processing date to Column A
         final_rows.append([current_date] + row)
         
     body = {'values': final_rows}
