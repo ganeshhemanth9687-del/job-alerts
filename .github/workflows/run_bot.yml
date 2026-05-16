@@ -1,8 +1,8 @@
 name: Run Job Alert Parser
 on:
   schedule:
-    - cron: '0 */4 * * *'  # Runs every 4 hours automatically
-  workflow_dispatch:       # Allows you to press a button to manually test run it
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
 
 jobs:
   run-pipeline:
@@ -14,11 +14,11 @@ jobs:
       - name: Initialize Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11' # Upgraded to 3.11
 
       - name: Install Libraries
-        run: pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib google-generativeai
-
+        run: pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib google-genai # Updated to modern genai package
+        
       - name: Execute Pipeline Script
         env:
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
