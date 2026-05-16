@@ -60,9 +60,8 @@ def parse_with_gemini(email_content):
     
     response = model.generate_content([prompt, email_content])
     try:
-        # Strip away potential markdown wrapping if Gemini introduces it accidentally
-        cleaned_text = response.text.replace("
-```json", "").replace("```", "").strip()
+        # This keeps the string replacements safely on single lines
+        cleaned_text = response.text.replace("```json", "").replace("```", "").strip()
         return json.loads(cleaned_text)
     except Exception as e:
         print(f"Failed parsing JSON from Gemini: {e}")
