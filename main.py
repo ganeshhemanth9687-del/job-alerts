@@ -6,18 +6,18 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google import genai
 
-# 1. Load System Configuration from GitHub Secrets
-CLIENT_ID = os.environ['GMAIL_CLIENT_ID']
-CLIENT_SECRET = os.environ['GMAIL_CLIENT_SECRET']
-REFRESH_TOKEN = os.environ['GMAIL_REFRESH_TOKEN']
-SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
-GEMINI_KEY = os.environ['GEMINI_API_KEY']
+# 1. Load System Configuration & Sanitize any accidental wrapper bracket/whitespace additions
+CLIENT_ID = os.environ['GMAIL_CLIENT_ID'].strip("[]'\" ")
+CLIENT_SECRET = os.environ['GMAIL_CLIENT_SECRET'].strip("[]'\" ")
+REFRESH_TOKEN = os.environ['GMAIL_REFRESH_TOKEN'].strip("[]'\" ")
+SPREADSHEET_ID = os.environ['SPREADSHEET_ID'].strip("[]'\" ")
+GEMINI_KEY = os.environ['GEMINI_API_KEY'].strip("[]'\" ")
 
 # 2. Authorize Google Workspace Connections via OAuth2 Refresh Token
 creds = Credentials(
     None,
     refresh_token=REFRESH_TOKEN,
-    token_uri="[https://oauth2.googleapis.com/token](https://oauth2.googleapis.com/token)",
+    token_uri="https://oauth2.googleapis.com/token",
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET
 )
@@ -72,8 +72,7 @@ def parse_with_gemini(email_content):
     try:
         cleaned_text = response.text.strip()
         
-        # chr(96) is the backtick symbol (`). 
-        # This completely avoids putting physical backticks in the file to stop copy-paste syntax splitting.
+        # Safe string boundary slicing completely avoiding physical backticks in code
         triple_backtick_json = chr(96) + chr(96) + chr(96) + "json"
         triple_backtick = chr(96) + chr(96) + chr(96)
         
