@@ -17,7 +17,7 @@ GEMINI_KEY = os.environ['GEMINI_API_KEY']
 creds = Credentials(
     None,
     refresh_token=REFRESH_TOKEN,
-    token_uri="https://oauth2.googleapis.com/token",
+    token_uri="[https://oauth2.googleapis.com/token](https://oauth2.googleapis.com/token)",
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET
 )
@@ -70,15 +70,19 @@ def parse_with_gemini(email_content):
     )
     
     try:
-        # Safe string cleaning using safe targets to avoid copy-paste line breaks
         cleaned_text = response.text.strip()
-        if cleaned_text.startswith("```json"):
+        
+        # chr(96) is the backtick symbol (`). 
+        # This completely avoids putting physical backticks in the file to stop copy-paste syntax splitting.
+        triple_backtick_json = chr(96) + chr(96) + chr(96) + "json"
+        triple_backtick = chr(96) + chr(96) + chr(96)
+        
+        if cleaned_text.startswith(triple_backtick_json):
             cleaned_text = cleaned_text[7:]
-        elif cleaned_text.startswith("
-```"):
+        elif cleaned_text.startswith(triple_backtick):
             cleaned_text = cleaned_text[3:]
             
-        if cleaned_text.endswith("```"):
+        if cleaned_text.endswith(triple_backtick):
             cleaned_text = cleaned_text[:-3]
             
         cleaned_text = cleaned_text.strip()
